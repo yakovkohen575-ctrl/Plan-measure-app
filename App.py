@@ -1,8 +1,9 @@
 import streamlit as st
 from PIL import Image
-from pdf2image import convert_from_bytes
+import fitz  # PyMuPDF
 from streamlit_drawable_canvas import st_canvas
 import math
+import io
 
 st.set_page_config(page_title="מדידת קווים לפי קנה מידה", layout="wide")
 st.title("📐 מדידת קווים לפי קנה מידה מתוך תמונה או PDF")
@@ -10,16 +11,16 @@ st.title("📐 מדידת קווים לפי קנה מידה מתוך תמונה 
 uploaded_file = st.file_uploader("📎 העלה תמונה או PDF", type=["jpg", "png", "pdf"])
 if uploaded_file:
     if uploaded_file.type == "application/pdf":
-        pages = convert_from_bytes(uploaded_file.read())
-        image = pages[0]
+        pdf_doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+        page = pdf_doc.load_page(0)
+        pix = page.get_pixmap()
+        image = Image.open(io.BytesIO(pix.tobytes("png")))
     else:
         image = Image.open(uploaded_file)
 
     st.image(image, caption="תצוגה מקדימה", use_column_width=True)
 
     st.markdown("### 🧭 שלב 1: צייר קו קנה מידה")
-    st.info("צייר קו על התמונה שאורכו ידוע לך (למשל, 5 מטר)")
-
     canvas_scale = st_canvas(
         background_image=image,
         height=image.height,
